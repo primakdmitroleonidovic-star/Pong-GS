@@ -26,21 +26,31 @@ jobs:
 
       - name: Create LÖVE game archive
         run: |
-          mkdir -p game
+          rm -rf game game.love web
+          mkdir game
+
           cp main.lua game/
           cp conf.lua game/
+
           cd game
           zip -r ../game.love .
           cd ..
 
+          echo "Game archive created:"
+          ls -lh game.love
+
       - name: Install love.js
-        run: npm install -g love.js
+        run: |
+          npm install love.js
 
       - name: Build Lua game for web
         run: |
-          rm -rf web
-          love.js game.love web -c
-          echo "=== Web files ==="
+          echo "Building LÖVE game for GitHub Pages..."
+
+          npx love.js -c -t "Pong-GS" game.love web
+
+          echo "Build completed."
+          echo "Web files:"
           ls -la web
 
       - name: Setup GitHub Pages
@@ -49,7 +59,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: web
+          path: ./web
 
   deploy:
     needs: build
