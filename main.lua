@@ -5,21 +5,28 @@ local speed,ballSpeed,radius=520,520,10
 local left,right,ball
 local p1,p2=0,0
 local running,paused,gameOver=false,false,false
-local fontBig,fontSmall
+local fontBig,fontSmall,fontControls
 local sounds={}
 
 local function makeSound(freq,duration)
- local rate=44100; local n=math.floor(rate*duration)
+ local rate=44100
+ local n=math.floor(rate*duration)
  local data=love.sound.newSoundData(n,rate,16,1)
+
  for i=0,n-1 do
-  local t=i/rate; local fade=1-i/n
+  local t=i/rate
+  local fade=1-i/n
   data:setSample(i,math.sin(2*math.pi*freq*t)*.18*fade)
  end
+
  return love.audio.newSource(data,"static")
 end
 
 local function sound(n)
- if sounds[n] then sounds[n]:stop(); sounds[n]:play() end
+ if sounds[n] then
+  sounds[n]:stop()
+  sounds[n]:play()
+ end
 end
 
 local function resetBall(dir)
@@ -30,24 +37,50 @@ end
 
 local function resetGame()
  p1,p2=0,0
- left={x=40,y=H/2-ph/2}
- right={x=W-40-pw,y=H/2-ph/2}
- ball={x=W/2,y=H/2}
+
+ left={
+  x=40,
+  y=H/2-ph/2
+ }
+
+ right={
+  x=W-40-pw,
+  y=H/2-ph/2
+ }
+
+ ball={
+  x=W/2,
+  y=H/2
+ }
+
  resetBall(love.math.random()<.5 and 1 or -1)
- running,paused,gameOver=false,false,false
+
+ running=false
+ paused=false
+ gameOver=false
 end
 
 local function hit(p)
- return ball.x-radius<p.x+pw and ball.x+radius>p.x
-    and ball.y-radius<p.y+ph and ball.y+radius>p.y
+ return ball.x-radius<p.x+pw
+    and ball.x+radius>p.x
+    and ball.y-radius<p.y+ph
+    and ball.y+radius>p.y
 end
 
 function love.load()
- love.window.setMode(W,H,{fullscreen=false,resizable=false,vsync=true})
+ love.window.setMode(W,H,{
+  fullscreen=false,
+  resizable=false,
+  vsync=true
+ })
+
  love.window.setTitle("Pong")
+
  love.graphics.setBackgroundColor(.067,.067,.067)
+
  fontBig=love.graphics.newFont(52)
  fontSmall=love.graphics.newFont(20)
+ fontControls=love.graphics.newFont(18)
 
  sounds.bounce=makeSound(520,.06)
  sounds.paddle=makeSound(700,.06)
@@ -58,12 +91,28 @@ function love.load()
 end
 
 function love.update(dt)
- if not running or paused or gameOver then return end
 
- if love.keyboard.isDown("w") then left.y=left.y-speed*dt end
- if love.keyboard.isDown("s") then left.y=left.y+speed*dt end
- if love.keyboard.isDown("up") then right.y=right.y-speed*dt end
- if love.keyboard.isDown("down") then right.y=right.y+speed*dt end
+ if not running or paused or gameOver then
+  return
+ end
+
+ -- Гравець 1: W / S
+ if love.keyboard.isDown("w") then
+  left.y=left.y-speed*dt
+ end
+
+ if love.keyboard.isDown("s") then
+  left.y=left.y+speed*dt
+ end
+
+ -- Гравець 2: стрілки ↑ / ↓
+ if love.keyboard.isDown("up") then
+  right.y=right.y-speed*dt
+ end
+
+ if love.keyboard.isDown("down") then
+  right.y=right.y+speed*dt
+ end
 
  left.y=math.max(0,math.min(H-ph,left.y))
  right.y=math.max(0,math.min(H-ph,right.y))
@@ -75,6 +124,7 @@ function love.update(dt)
   ball.y=radius
   ball.vy=math.abs(ball.vy)
   sound("bounce")
+
  elseif ball.y+radius>=H then
   ball.y=H-radius
   ball.vy=-math.abs(ball.vy)
@@ -99,6 +149,7 @@ function love.update(dt)
   p2=p2+1
   sound("score")
   resetBall(1)
+
  elseif ball.x>W+radius then
   p1=p1+1
   sound("score")
@@ -112,47 +163,145 @@ function love.update(dt)
 end
 
 function love.keypressed(key)
+
+ -- ПРОБІЛ — старт / пауза
  if key=="space" then
+
   if not gameOver then
+
    if not running then
     running=true
     paused=false
    else
     paused=not paused
    end
+
    sound("start")
   end
+
+ -- R — перезапуск
  elseif key=="r" then
   resetGame()
+
+ -- ESC — вихід
  elseif key=="escape" then
   love.event.quit()
  end
 end
 
 function love.draw()
+
+ -- Рахунок
  love.graphics.setFont(fontBig)
- love.graphics.printf(tostring(p1),0,35,W/2-40,"right")
- love.graphics.printf(tostring(p2),W/2+40,35,W/2-40,"left")
 
+ love.graphics.printf(
+  tostring(p1),
+  0,
+  35,
+  W/2-40,
+  "right"
+ )
+
+ love.graphics.printf(
+  tostring(p2),
+  W/2+40,
+  35,
+  W/2-40,
+  "left"
+ )
+
+ -- Центральна лінія
  love.graphics.setLineWidth(3)
+
  for y=0,H,30 do
-  love.graphics.line(W/2,y,W/2,y+15)
+  love.graphics.line(
+   W/2,
+   y,
+   W/2,
+   y+15
+  )
  end
 
- love.graphics.rectangle("fill",left.x,left.y,pw,ph)
- love.graphics.rectangle("fill",right.x,right.y,pw,ph)
- love.graphics.circle("fill",ball.x,ball.y,radius)
+ -- Платформи
+ love.graphics.rectangle(
+  "fill",
+  left.x,
+  left.y,
+  pw,
+  ph
+ )
 
+ love.graphics.rectangle(
+  "fill",
+  right.x,
+  right.y,
+  pw,
+  ph
+ )
+
+ -- М'яч
+ love.graphics.circle(
+  "fill",
+  ball.x,
+  ball.y,
+  radius
+ )
+
+ -- Повідомлення
  love.graphics.setFont(fontSmall)
+
  local msg
+
  if gameOver then
-  msg=(p1>=10 and "Гравець 1 переміг!" or "Гравець 2 переміг!").." Натисни R для нової гри"
+
+  msg=(p1>=10 and
+   "Гравець 1 переміг!"
+   or
+   "Гравець 2 переміг!")
+   .." Натисни R для нової гри"
+
  elseif not running then
+
   msg="Натисни ПРОБІЛ, щоб почати"
+
  elseif paused then
+
   msg="ПАУЗА — натисни ПРОБІЛ"
+
  else
-  msg="W / S  |  ↑ / ↓  |  ПРОБІЛ — пауза  |  R — перезапуск"
+
+  msg="Гра триває"
+
  end
- love.graphics.printf(msg,0,H-70,W,"center")
+
+ love.graphics.printf(
+  msg,
+  0,
+  H-105,
+  W,
+  "center"
+ )
+
+ -- ==================================================
+ -- ПОЯСНЕННЯ КЕРУВАННЯ ВНИЗУ
+ -- ==================================================
+
+ love.graphics.setFont(fontControls)
+
+ love.graphics.printf(
+  "Гравець 1: W / S — рух платформи     |     Гравець 2: ↑ / ↓ — рух платформи",
+  0,
+  H-65,
+  W,
+  "center"
+ )
+
+ love.graphics.printf(
+  "ПРОБІЛ — старт / пауза     |     R — перезапуск",
+  0,
+  H-38,
+  W,
+  "center"
+ )
+
 end
