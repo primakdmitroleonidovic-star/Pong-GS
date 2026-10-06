@@ -38,7 +38,10 @@ jobs:
 
       - name: Build Lua game for web
         run: |
+          rm -rf web
           love.js game.love web -c
+          echo "=== Web files ==="
+          ls -la web
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
@@ -46,7 +49,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./web
+          path: web
 
   deploy:
     needs: build
